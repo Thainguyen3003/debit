@@ -5,6 +5,7 @@ import { TopBar } from "../components/ui.jsx";
 import { fmt, dmy, today, ascii } from "../lib/format.js";
 import { ME, nameOf, invoiceData } from "../lib/ledger.js";
 import { vietqr, bankName } from "../lib/vietqr.js";
+import { invoiceToPng } from "../lib/invoiceImage.js";
 
 export default function InvoiceView() {
   const { data, toast, go, p, readOnly } = useApp();
@@ -17,6 +18,7 @@ export default function InvoiceView() {
   // Ảnh QR tự tải lên được ưu tiên hơn mã VietQR tự tạo
   const qrImg = m && balance >= 1 && st.qrAssetId ? assetUrl(st.qrAssetId) : "";
   const [imgBroken, setImgBroken] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!qrText) return setQr("");
@@ -38,6 +40,33 @@ export default function InvoiceView() {
       st.accountNo ? "STK: " + st.accountNo + " " + bankName(st.bankBin) + " - " + (st.accountName || "") : ""].filter(Boolean).join("\n");
     try { await navigator.clipboard.writeText(txt); toast("Đã sao chép"); }
     catch { toast("Máy không cho sao chép, hãy chụp màn hình"); }
+  }
+
+  // Lưu hóa đơn thành ảnh PNG để gửi qua Zalo, Messenger…
+  async function saveImage() {
+    setSaving(true);
+    try {
+      const qrLines = qrImg ? ["Quét mã để chuyển " + fmt(balance), ...(st.accountNo ? [st.accountName, bankName(st.bankBin) + " · " + st.accountNo] : [])]
+        : qr ? [st.accountName, bankName(st.bankBin) + " · " + st.accountNo, "Quét bằng app ngân hàng, số tiền đã điền sẵn"] : [];
+      const blob = await invoiceToPng({
+        owner: nameOf(data, ME), date: dmy(today()), to: m.name, label,
+        items: items.map((x) => ({ date: dmy(x.date), title: x.title, note: via(x), amount: (x.delta < 0 ? "−" : "") + fmt(Math.abs(x.delta)) })),
+        totalLabel: balance >= 0 ? "Cần trả" : "Mình trả lại bạn", total: fmt(Math.abs(balance)),
+        qrSrc: (qrImg && !imgBroken ? qrImg : "") || qr, qrLines: qrLines.filter(Boolean),
+      });
+      const filename = "hoa-don-" + ascii(m.name).replace(/\s+/g, "-") + "-" + today() + ".png";
+      const dl = await window.claude?.use?.("downloads");
+      if (dl) {
+        try { await dl.save({ filename, data: blob }); toast("Đã lưu ảnh hóa đơn"); }
+        catch (e) { if (e?.code !== "declined") toast("Chưa lưu được ảnh ở đây"); }
+      } else {
+        // Chạy thử trên máy: tải thẳng bằng trình duyệt
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob); a.download = filename; a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+      }
+    } catch { toast("Chưa tạo được ảnh hóa đơn"); }
+    finally { setSaving(false); }
   }
 
   return <>
@@ -68,10 +97,13 @@ export default function InvoiceView() {
         </div>
       )}
     </div>
-    <div className="btns" style={{ marginTop: 12 }}><button className="btn" onClick={copy}>Sao chép nội dung</button></div>
+    <div className="btns" style={{ marginTop: 12 }}>
+      <button className="btn primary" disabled={saving} onClick={saveImage}>{saving ? "Đang tạo ảnh…" : "Lưu ảnh hóa đơn"}</button>
+      <button className="btn" onClick={copy}>Sao chép nội dung</button>
+    </div>
     {balance >= 1 && !hasBank && !st.qrAssetId && !readOnly
       ? <p className="hint" style={{ marginTop: 10 }}>Muốn có mã QR chuyển khoản? Tải ảnh QR hoặc nhập tài khoản ngân hàng ở{" "}
           <button className="btn" style={{ padding: "2px 8px", fontSize: 12 }} onClick={() => go("members")}>Thành viên → Ngân hàng</button></p>
-      : <p className="hint" style={{ marginTop: 10 }}>Chụp màn hình phần hóa đơn để gửi cho {m.name}.</p>}
+      : <p className="hint" style={{ marginTop: 10 }}>Bấm Lưu ảnh hóa đơn rồi gửi ảnh cho {m.name}.</p>}
   </>;
 }
