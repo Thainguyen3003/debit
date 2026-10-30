@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
-import { useApp } from "../store.jsx";
+import { useApp, assetUrl } from "../store.jsx";
 import { TopBar } from "../components/ui.jsx";
 import { fmt, dmy, today, ascii } from "../lib/format.js";
 import { ME, nameOf, invoiceData } from "../lib/ledger.js";
@@ -14,6 +14,9 @@ export default function InvoiceView() {
   const hasBank = !!(st.bankBin && st.accountNo);
   const qrText = m && balance >= 1 && hasBank ? vietqr(st.bankBin, String(st.accountNo).replace(/\s/g, ""), balance, ascii("Tra no " + m.name)) : "";
   const [qr, setQr] = useState("");
+  // Ảnh QR tự tải lên được ưu tiên hơn mã VietQR tự tạo
+  const qrImg = m && balance >= 1 && st.qrAssetId ? assetUrl(st.qrAssetId) : "";
+  const [imgBroken, setImgBroken] = useState(false);
 
   useEffect(() => {
     if (!qrText) return setQr("");
@@ -50,7 +53,14 @@ export default function InvoiceView() {
         </tbody></table>
       )}
       <div className="tot"><span>{balance >= 0 ? "Cần trả" : "Mình trả lại bạn"}</span><b className="num">{fmt(Math.abs(balance))}</b></div>
-      {qrText && (
+      {qrImg && (
+        <div className="qrbox">
+          <div className="qr">{imgBroken ? "Không tải được ảnh QR" : <img className="up" src={qrImg} alt="Mã QR chuyển khoản" onError={() => setImgBroken(true)} />}</div>
+          <div className="bank">Quét mã để chuyển <b>{fmt(balance)}</b></div>
+          {st.accountNo && <div className="bank"><b>{st.accountName}</b><br />{bankName(st.bankBin)} · {st.accountNo}</div>}
+        </div>
+      )}
+      {!qrImg && qrText && (
         <div className="qrbox">
           <div className="qr">{qr ? <img src={qr} alt="Mã QR chuyển khoản" /> : "Đang tạo mã QR…"}</div>
           <div className="bank"><b>{st.accountName}</b><br />{bankName(st.bankBin)} · {st.accountNo}</div>
@@ -59,8 +69,8 @@ export default function InvoiceView() {
       )}
     </div>
     <div className="btns" style={{ marginTop: 12 }}><button className="btn" onClick={copy}>Sao chép nội dung</button></div>
-    {balance >= 1 && !hasBank
-      ? <p className="hint" style={{ marginTop: 10 }}>Muốn có mã QR chuyển khoản? Nhập tài khoản ngân hàng ở{" "}
+    {balance >= 1 && !hasBank && !st.qrAssetId
+      ? <p className="hint" style={{ marginTop: 10 }}>Muốn có mã QR chuyển khoản? Tải ảnh QR hoặc nhập tài khoản ngân hàng ở{" "}
           <button className="btn" style={{ padding: "2px 8px", fontSize: 12 }} onClick={() => go("members")}>Thành viên → Ngân hàng</button></p>
       : <p className="hint" style={{ marginTop: 10 }}>Chụp màn hình phần hóa đơn để gửi cho {m.name}.</p>}
   </>;

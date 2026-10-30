@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useApp } from "../store.jsx";
+import { useRef, useState } from "react";
+import { useApp, assetUrl } from "../store.jsx";
 import { TopBar, ConfirmButton, balClass, Empty } from "../components/ui.jsx";
 import { fmt, today, initials, ascii } from "../lib/format.js";
 import { balances } from "../lib/ledger.js";
@@ -37,6 +37,46 @@ function MemberRow({ m, v, used }) {
   );
 }
 
+// Ảnh mã QR tự tải lên (từ app ngân hàng, MoMo, ZaloPay…), hiện trên hóa đơn. Lưu ảnh vào kho của artifact, id ảnh lưu trong settings/main
+function QrUpload() {
+  const { data, write, toast, assets } = useApp();
+  const id = data.settings.qrAssetId;
+  const [busy, setBusy] = useState(false);
+  const fileRef = useRef(null);
+
+  async function pick(e) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!/^image\/(png|jpeg|webp)$/.test(file.type)) return toast("Chọn ảnh PNG, JPG hoặc WebP");
+    if (file.size > 5 * 1024 * 1024) return toast("Ảnh quá lớn, chọn ảnh dưới 5 MB");
+    setBusy(true);
+    try {
+      const up = await assets.upload(file);
+      const ok = await write((db) => db.doc("settings/main").set({ ...data.settings, qrAssetId: up.id }), "Đã lưu ảnh QR");
+      // Xóa ảnh không còn dòng nào trỏ tới: ảnh cũ khi đổi thành công, hoặc ảnh vừa tải nếu chưa lưu được
+      const orphan = ok ? id : up.id;
+      if (orphan) assets.delete(orphan).catch(() => {});
+    } catch (err) {
+      toast(err?.code === "too_large" ? "Ảnh quá lớn" : err?.code === "quota_or_state" ? "Hết chỗ lưu ảnh" : "Chưa tải được ảnh, thử lại sau");
+    } finally { setBusy(false); }
+  }
+  async function remove() {
+    const { qrAssetId, ...rest } = data.settings;
+    if (await write((db) => db.doc("settings/main").set(rest), "Đã xóa ảnh QR")) assets?.delete(qrAssetId).catch(() => {});
+  }
+
+  return <div className="card">
+    {id && <div className="qrprev"><img src={assetUrl(id)} alt="Ảnh mã QR đã tải lên" /></div>}
+    {assets ? <div className="btns">
+      <button className="btn" disabled={busy} onClick={() => fileRef.current.click()}>{busy ? "Đang tải…" : id ? "Đổi ảnh" : "Tải ảnh QR lên"}</button>
+      {id && <ConfirmButton label="Xóa ảnh" confirmLabel="Xác nhận xóa" onConfirm={remove} />}
+      <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" hidden onChange={pick} />
+    </div> : <p className="hint">Chỉ chủ sổ mới tải được ảnh QR.</p>}
+    <p className="hint" style={{ marginTop: 8 }}>Lưu ảnh mã QR từ app ngân hàng hoặc ví rồi tải lên đây. Hóa đơn sẽ kèm ảnh này để mọi người quét và chuyển tiền.</p>
+  </div>;
+}
+
 export default function MembersView() {
   const { data, write, toast } = useApp();
   const b = balances(data);
@@ -57,7 +97,7 @@ export default function MembersView() {
   function saveSettings() {
     const body = { myName: form.myName.trim(), bankBin: form.bankBin, accountNo: form.accountNo.replace(/\s/g, ""), accountName: ascii(form.accountName).toUpperCase() };
     if (body.accountNo && !/^\d{4,20}$/.test(body.accountNo)) return toast("Số tài khoản chỉ gồm chữ số");
-    write((db) => db.doc("settings/main").set(body), "Đã lưu thông tin");
+    write((db) => db.doc("settings/main").set({ ...st, ...body }), "Đã lưu thông tin");
   }
   async function exportData() {
     const json = JSON.stringify({ exportedAt: new Date().toISOString(), ...data }, null, 2);
@@ -103,6 +143,9 @@ export default function MembersView() {
       <button className="btn primary block" onClick={saveSettings}>Lưu thông tin</button>
       <p className="hint" style={{ marginTop: 8 }}>Chỉ cần số tài khoản để tạo mã QR. Không bao giờ nhập mật khẩu hay mã OTP vào đây.</p>
     </div>
+
+    <div className="section-h"><span>Ảnh mã QR (kèm trên hóa đơn)</span></div>
+    <QrUpload />
 
     <div className="section-h"><span>Sao lưu</span></div>
     <div className="card">

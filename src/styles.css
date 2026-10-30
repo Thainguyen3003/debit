@@ -120,6 +120,9 @@ button{cursor:pointer}
 .qrbox{display:flex;flex-direction:column;align-items:center;gap:6px;margin-top:16px;padding-top:14px;border-top:2px solid #1C2420;text-align:center}
 .qr{background:#fff;padding:8px;line-height:0}
 .qr img,.qr canvas{width:200px;height:200px}
+.qr img.up{height:auto;max-height:280px;object-fit:contain}
+.qrprev{margin-bottom:10px}
+.qrprev img{display:block;width:160px;height:160px;object-fit:contain;background:#fff;border:1px solid var(--line);border-radius:8px}
 .qrbox .bank{font-size:13px;color:#66706A}
 .qrbox .bank b{color:#1C2420}
 

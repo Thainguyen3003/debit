@@ -13,11 +13,25 @@ async function connectDb() {
   return null;
 }
 
+// Kho ảnh (capability `assets`): chỉ người sửa được artifact mới có. Chạy thử trên máy thì giữ ảnh trong bộ nhớ trình duyệt
+const devBlobs = new Map();
+async function connectAssets() {
+  if (window.claude?.use) return window.claude.use("assets").catch(() => null);
+  if (import.meta.env.DEV) return {
+    upload: async (blob) => { const id = "dev" + Date.now(), url = URL.createObjectURL(blob); devBlobs.set(id, url); return { id, url }; },
+    delete: async (id) => ({ deleted: devBlobs.delete(id) }),
+  };
+  return null;
+}
+// Đường dẫn hiển thị ảnh từ id đã lưu trong db
+export const assetUrl = (id) => devBlobs.get(id) || "/_blob/" + id;
+
 export function AppProvider({ children }) {
   const [data, setData] = useState(EMPTY);
   const [status, setStatus] = useState("loading");
   const [nav, setNav] = useState({ view: "sheet", p: {} });
   const [toastMsg, setToastMsg] = useState(null);
+  const [assets, setAssets] = useState(null);
   const db = useRef(null);
   const toastTimer = useRef();
 
@@ -45,6 +59,7 @@ export function AppProvider({ children }) {
     });
     return () => { alive = false; unsubs.forEach((u) => u()); };
   }, []);
+  useEffect(() => { connectAssets().then(setAssets); }, []);
 
   const toast = useCallback((msg) => {
     setToastMsg(msg);
@@ -63,7 +78,7 @@ export function AppProvider({ children }) {
   const setP = useCallback((patch) => setNav((n) => ({ ...n, p: { ...n.p, ...patch } })), []);
 
   return (
-    <Ctx.Provider value={{ data, status, write, toast, go, setP, view: nav.view, p: nav.p }}>
+    <Ctx.Provider value={{ data, status, write, toast, go, setP, assets, view: nav.view, p: nav.p }}>
       {children}
       {toastMsg && <div className="toast" role="status">{toastMsg}</div>}
     </Ctx.Provider>
