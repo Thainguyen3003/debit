@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useApp } from "../store.jsx";
-import { TopBar, ConfirmButton } from "../components/ui.jsx";
+import { TopBar, ConfirmButton, DateInput } from "../components/ui.jsx";
 import { fmt, fmtNum, parseMoney, today } from "../lib/format.js";
 import { ME, CLOSED_MSG, sumShares, nameOf, isClosed } from "../lib/ledger.js";
 
@@ -63,7 +63,7 @@ export default function ExpenseForm() {
         <input className="input" id="f-title" value={f.title} placeholder="Ví dụ: Bún đậu, Phê La" onChange={(e) => set({ title: e.target.value })} /></div>
       <div className="grid2">
         <div className="field"><label htmlFor="f-date">Ngày</label>
-          <input className="input" type="date" id="f-date" value={f.date} onChange={(e) => set({ date: e.target.value })} /></div>
+          <DateInput className="input" id="f-date" value={f.date} onChange={(e) => set({ date: e.target.value })} /></div>
         <div className="field"><label htmlFor="f-payer">Ai trả tiền</label>
           <select className="input" id="f-payer" value={f.payerId} onChange={(e) => set({ payerId: e.target.value })}>
             {people.map((id) => <option key={id} value={id}>{id === ME ? label(id) + " (bạn)" : label(id)}</option>)}

@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { useApp } from "../store.jsx";
-import { TopBar, ConfirmButton, Fab, Empty } from "../components/ui.jsx";
+import { TopBar, ConfirmButton, Fab, Empty, DateInput } from "../components/ui.jsx";
 import { fmt, fmtNum, money, parseMoney, today, dmy, monthLabel, wd, isWeekend, nextYm } from "../lib/format.js";
 import { ME, CLOSED_MSG, sumShares, byTime, nameOf, timeline, isClosed, sheetMonths } from "../lib/ledger.js";
 
@@ -200,7 +200,7 @@ export default function SheetView() {
           {!rows.length && locked && <tr><td className="c-date" /><td colSpan={3 + cols.length} className="t c-muted">Không có khoản chi nào trong {monthLabel(ym).toLowerCase()}.</td></tr>}
           {!locked && (
             <tr className="draft">
-              <td className="c-date"><input type="date" className="cellin" aria-label="Ngày" value={d.date} onChange={(e) => setD({ date: e.target.value })} /></td>
+              <td className="c-date"><DateInput className="cellin" aria-label="Ngày" value={d.date} onChange={(e) => setD({ date: e.target.value })} /></td>
               <td>{d.date && <span className="wday">{wd(d.date)}</span>}</td>
               <td className="t">
                 <input ref={titleRef} className="cellin" placeholder="Gõ khoản chi mới…" value={d.title} onChange={(e) => setD({ title: e.target.value })} onKeyDown={draftKey} />

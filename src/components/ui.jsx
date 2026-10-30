@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useApp } from "../store.jsx";
+import { dmy } from "../lib/format.js";
 
 export function TopBar({ title, back }) {
   const { go } = useApp();
@@ -33,6 +34,18 @@ export function BalPill({ v }) {
 export function Fab() {
   const { go, view, p } = useApp();
   return <button className="fab" onClick={() => go("expense", { from: view, mid: p.mid, pm: p.pm })}>+ Thêm khoản chi</button>;
+}
+
+// Ô ngày luôn hiện dd/mm/yyyy: ô date gốc của trình duyệt theo ngôn ngữ máy (có thể ra mm/dd/yyyy),
+// nên đặt nó trong suốt đè lên chữ tự định dạng, bấm vào vẫn mở lịch chọn ngày
+export function DateInput({ className, value, onChange, ...rest }) {
+  return (
+    <span className="dateinput">
+      <span className={className + (value ? "" : " c-muted")} aria-hidden="true">{value ? dmy(value) : "dd/mm/yyyy"}</span>
+      <input type="date" className={className} value={value} onChange={onChange}
+        onClick={(e) => { try { e.currentTarget.showPicker(); } catch {} }} {...rest} />
+    </span>
+  );
 }
 
 export const Empty = ({ title, children }) => (

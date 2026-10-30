@@ -23,7 +23,7 @@ html,body{margin:0}
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.45;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
-  padding-block:0 calc(84px + env(safe-area-inset-bottom,0px))}
+  padding-block:0 calc(140px + env(safe-area-inset-bottom,0px))} /* chừa chỗ cho thanh tab và nút nổi Thêm khoản chi */
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
 .wrap{max-width:560px;margin:0 auto}
 .num{font-variant-numeric:tabular-nums}
@@ -154,7 +154,7 @@ button{cursor:pointer}
 .cellin{width:100%;min-width:84px;border:1px solid var(--accent);background:var(--bg);border-radius:6px;padding:5px 6px;text-align:inherit}
 .sheet tr.draft td{background:var(--accent-soft);padding:4px}
 .sheet tr.draft .cellin{border-color:var(--line)}
-.sheet tr.draft input[type=date]{min-width:136px}
+.sheet tr.draft .dateinput .cellin{min-width:110px}
 .sheet td.t .cellin{min-width:150px}
 .sheet .cellin.small{margin-top:4px;font-size:12px;min-width:0;width:auto}
 .confirm{display:inline-flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
@@ -172,7 +172,7 @@ button{cursor:pointer}
 .mstatus .hint{flex:1;min-width:200px}
 .sheet.locked tr.click{cursor:default}
 @media (min-width:900px){
-  body{padding-left:calc(232px + env(safe-area-inset-left,0px));padding-bottom:32px}
+  body{padding-left:calc(232px + env(safe-area-inset-left,0px));padding-bottom:96px}
   .tabs{top:0;right:auto;width:208px;border-top:0;border-right:1px solid var(--line);
     padding:calc(20px + env(safe-area-inset-top,0px)) 12px calc(20px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px))}
   .tabs .in{grid-template-columns:1fr;max-width:none;gap:4px}
@@ -197,3 +197,7 @@ button{cursor:pointer}
 }
 @media (prefers-reduced-motion:no-preference){.tabs,body{transition:width .18s ease,padding-left .18s ease}}
 @media (prefers-reduced-motion:no-preference){.toast{animation:pop .18s ease-out}@keyframes pop{from{opacity:0;transform:translate(-50%,6px)}}}
+.dateinput{position:relative;display:block}
+.dateinput>span{display:block;white-space:nowrap}
+.dateinput>input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.dateinput:focus-within>span{outline:2px solid var(--accent);outline-offset:2px}
