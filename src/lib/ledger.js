@@ -35,8 +35,8 @@ export function timeline(data, mid) {
   for (const e of data.expenses) {
     if (!(e.shares && mid in e.shares) && e.payerId !== mid) continue;
     const sub = e.payerId === mid ? "Bạn ấy trả hộ " + sumShares(e).toLocaleString("vi-VN") + " đ"
-      : e.payerId === ME ? "" : nameOf(data, e.payerId) + " trả";
-    ev.push({ kind: "exp", id: e.id, date: e.date, createdAt: e.createdAt, title: e.title, sub, delta: deltaFor(e, mid) });
+      : e.payerId === ME ? "" : nameOf(data, e.payerId) + " trả trước, vẫn tính vào nợ với bạn";
+    ev.push({ kind: "exp", id: e.id, date: e.date, createdAt: e.createdAt, title: e.title, sub, payerId: e.payerId, delta: deltaFor(e, mid) });
   }
   for (const p of data.payments) {
     if (p.memberId !== mid) continue;

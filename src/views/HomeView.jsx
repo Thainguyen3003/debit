@@ -14,8 +14,8 @@ export default function HomeView() {
   return <>
     <TopBar title="Từng người" />
     <div className="summary">
-      <div className="sum owe"><div className="lbl">Mọi người nợ bạn</div><div className="val num">{fmt(owe)}</div></div>
-      <div className="sum credit"><div className="lbl">Bạn đang nợ</div><div className="val num">{fmt(cred)}</div></div>
+      <div className="sum owe"><div className="lbl">Người khác nợ bạn</div><div className="val num">{fmt(owe)}</div></div>
+      <div className="sum credit"><div className="lbl">Bạn nợ người khác</div><div className="val num">{fmt(cred)}</div></div>
     </div>
     {!data.members.length ? (
       <Empty title="Chưa có ai trong sổ">Thêm những người hay ăn uống chung, rồi bắt đầu ghi khoản chi đầu tiên.

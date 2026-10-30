@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { useApp } from "../store.jsx";
 import { TopBar, ConfirmButton, Fab, Empty, DateInput } from "../components/ui.jsx";
-import { fmt, fmtNum, money, parseMoney, today, dmy, monthLabel, wd, isWeekend, nextYm } from "../lib/format.js";
+import { fmt, fmtNum, money, parseMoney, today, dm, monthLabel, wdShort, isWeekend, nextYm } from "../lib/format.js";
 import { ME, CLOSED_MSG, sumShares, byTime, nameOf, timeline, isClosed, sheetMonths } from "../lib/ledger.js";
 
 let rememberedMonth = ""; // giữ tháng đang xem khi chuyển qua lại giữa các màn
@@ -10,8 +10,9 @@ let rememberedMonth = ""; // giữ tháng đang xem khi chuyển qua lại giữ
 const cls = (x) => (x.delta < 0 ? "neg" : x.paid ? "paid" : "due");
 
 function DayCells({ date, show }) {
-  if (!show) return <><td className="c-date" /><td /></>;
-  return <><td className="c-date">{dmy(date)}</td><td><span className={"wday" + (isWeekend(date) ? " we" : "")}>{wd(date)}</span></td></>;
+  // Gộp Thứ vào cột Ngày và bỏ năm (đã chọn tháng ở trên) để trên điện thoại còn chỗ cho các cột tiền
+  if (!show) return <td className="c-date" />;
+  return <td className="c-date"><span className={"wday" + (isWeekend(date) ? " we" : "")}>{wdShort(date)}</span> {dm(date)}</td>;
 }
 
 export default function SheetView() {
@@ -147,8 +148,8 @@ export default function SheetView() {
     <div className="msum">
       <div><span className="lbl">Tổng chi tháng</span><b className="num">{fmt(spent)}</b></div>
       <div><span className="lbl">Phần của {nameOf(data, ME)}</span><b className="num">{fmt(mine)}</b></div>
-      <div><span className="lbl">Còn nợ bạn</span><b className="num c-owe">{fmt(oweEnd)}</b></div>
-      <div><span className="lbl">Bạn còn nợ</span><b className="num c-credit">{fmt(credEnd)}</b></div>
+      <div><span className="lbl">Người khác nợ bạn</span><b className="num c-owe">{fmt(oweEnd)}</b></div>
+      <div><span className="lbl">Bạn nợ người khác</span><b className="num c-credit">{fmt(credEnd)}</b></div>
       <div><span className="lbl">Đã tất toán</span><b className="num">{settled}/{active.length} người</b></div>
     </div>
     <div className="mstatus">
@@ -164,12 +165,12 @@ export default function SheetView() {
     <div className={"sheet" + (locked ? " locked" : "")}>
       <table>
         <thead><tr>
-          <th className="c-date">Ngày</th><th>Thứ</th><th>Nội dung</th><th>{nameOf(data, ME)}</th>
+          <th className="c-date">Ngày</th><th>Nội dung</th><th>{nameOf(data, ME)}</th>
           {cols.map((m) => <th key={m.id}><button onClick={() => go("person", { mid: m.id, pm: ym })}>{m.name}</button></th>)}
         </tr></thead>
         <tbody>
           {cols.some((m) => Math.abs(info[m.id].carry) >= 1) && (
-            <tr><td className="c-date" /><td /><td className="t red b">Nợ cũ</td><td />
+            <tr><td className="c-date" /><td className="t red b">Nợ cũ</td><td />
               {cols.map((m) => {
                 const c = info[m.id].carry;
                 return Math.abs(c) < 1 ? <td key={m.id} /> : <td key={m.id} className={"b " + (c < 0 ? "neg" : info[m.id].carryPaid ? "paid" : "due")}>{money(c)}</td>;
@@ -197,11 +198,10 @@ export default function SheetView() {
               </tr>
             );
           })}
-          {!rows.length && locked && <tr><td className="c-date" /><td colSpan={3 + cols.length} className="t c-muted">Không có khoản chi nào trong {monthLabel(ym).toLowerCase()}.</td></tr>}
+          {!rows.length && locked && <tr><td className="c-date" /><td colSpan={2 + cols.length} className="t c-muted">Không có khoản chi nào trong {monthLabel(ym).toLowerCase()}.</td></tr>}
           {!locked && (
             <tr className="draft">
               <td className="c-date"><DateInput className="cellin" aria-label="Ngày" value={d.date} onChange={(e) => setD({ date: e.target.value })} /></td>
-              <td>{d.date && <span className="wday">{wd(d.date)}</span>}</td>
               <td className="t">
                 <input ref={titleRef} className="cellin" placeholder="Gõ khoản chi mới…" value={d.title} onChange={(e) => setD({ title: e.target.value })} onKeyDown={draftKey} />
                 <select className="cellin small" aria-label="Ai trả" value={d.payerId} onChange={(e) => setD({ payerId: e.target.value })}>
@@ -214,7 +214,7 @@ export default function SheetView() {
               ))}
             </tr>
           )}
-          <tr className="sum"><td className="c-date" /><td /><td className="t red">Tổng</td><td>{mine ? money(mine) : ""}</td>
+          <tr className="sum"><td className="c-date" /><td className="t">Tổng</td><td>{mine ? money(mine) : ""}</td>
             {cols.map((m) => {
               const i = info[m.id], v = i.end;
               if (Math.abs(v) < 1) return <td key={m.id} className={i.inMonth || Math.abs(i.carry) >= 1 ? "done" : ""}>{i.inMonth || Math.abs(i.carry) >= 1 ? "Đã tất toán" : ""}</td>;

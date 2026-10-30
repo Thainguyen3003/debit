@@ -24,9 +24,13 @@ export default function InvoiceView() {
 
   if (!m) return <TopBar title="Hóa đơn" back={{ view: "home" }} />;
 
+  // Khoản do người thứ ba trả trước vẫn trả lại cho bạn (mọi khoản đều tính qua bạn), ghi rõ để người nhận không trả nhầm hai lần
+  const via = (x) => (x.payerId && x.payerId !== ME && x.payerId !== p.mid
+    ? nameOf(data, x.payerId) + " trả trước, bạn trả lại cho " + nameOf(data, ME) : "");
+
   async function copy() {
     const txt = ["Hóa đơn gửi " + m.name + (label ? " (" + label + ")" : ""),
-      ...items.map((x) => (x.date ? dmy(x.date) + " " : "") + x.title + ": " + (x.delta < 0 ? "-" : "") + fmt(Math.abs(x.delta))),
+      ...items.map((x) => (x.date ? dmy(x.date) + " " : "") + x.title + (via(x) ? " (" + via(x) + ")" : "") + ": " + (x.delta < 0 ? "-" : "") + fmt(Math.abs(x.delta))),
       (balance >= 0 ? "Cần trả: " : "Mình trả lại: ") + fmt(Math.abs(balance)),
       st.accountNo ? "STK: " + st.accountNo + " " + bankName(st.bankBin) + " - " + (st.accountName || "") : ""].filter(Boolean).join("\n");
     try { await navigator.clipboard.writeText(txt); toast("Đã sao chép"); }
@@ -41,7 +45,7 @@ export default function InvoiceView() {
       {!items.length ? <p style={{ color: "#66706A" }}>Không có khoản nào chưa thanh toán.</p> : (
         <table><tbody>
           {items.map((x, i) => (
-            <tr key={i}><td className="d">{dmy(x.date)}</td><td>{x.title}</td><td className="a">{x.delta < 0 ? "−" : ""}{fmt(Math.abs(x.delta))}</td></tr>
+            <tr key={i}><td className="d">{dmy(x.date)}</td><td>{x.title}{via(x) && <span className="via">{via(x)}</span>}</td><td className="a">{x.delta < 0 ? "−" : ""}{fmt(Math.abs(x.delta))}</td></tr>
           ))}
         </tbody></table>
       )}

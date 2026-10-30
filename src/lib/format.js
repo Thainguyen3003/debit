@@ -24,6 +24,9 @@ export function today() {
 export const dmy = (d) => (d ? d.slice(8, 10) + "/" + d.slice(5, 7) + "/" + d.slice(0, 4) : "");
 export const monthLabel = (ym) => "Tháng " + parseInt(ym.slice(5, 7), 10) + "/" + ym.slice(0, 4);
 export const wd = (d) => { const n = new Date(d + "T00:00:00").getDay(); return n === 0 ? "Chủ nhật" : "Thứ " + (n + 1); };
+// Viết tắt cho cột Ngày của Bảng: "T5", "CN"
+export const wdShort = (d) => wd(d).replace("Thứ ", "T").replace("Chủ nhật", "CN");
+export const dm = (d) => (d ? d.slice(8, 10) + "/" + d.slice(5, 7) : "");
 export const isWeekend = (d) => /Thứ 7|Chủ/.test(wd(d));
 export const nextYm = (ym) => {
   let y = +ym.slice(0, 4), m = +ym.slice(5, 7) + 1;
