@@ -32,6 +32,9 @@ export function AppProvider({ children }) {
   const [nav, setNav] = useState({ view: "sheet", p: {} });
   const [toastMsg, setToastMsg] = useState(null);
   const [assets, setAssets] = useState(null);
+  // Bạn bè được chia sẻ chỉ xem; chỉ chủ sổ được sửa (khớp quy tắc db: đọc "view", ghi "owner").
+  // Chạy thử trên máy: thêm ?xem vào địa chỉ để giả làm người chỉ xem
+  const [readOnly, setReadOnly] = useState(() => import.meta.env.DEV && new URLSearchParams(location.search).has("xem"));
   const db = useRef(null);
   const toastTimer = useRef();
 
@@ -60,6 +63,10 @@ export function AppProvider({ children }) {
     return () => { alive = false; unsubs.forEach((u) => u()); };
   }, []);
   useEffect(() => { connectAssets().then(setAssets); }, []);
+  useEffect(() => {
+    if (!window.claude?.use) return;
+    window.claude.use("user").then((u) => u?.isOwner() ?? false).then((own) => setReadOnly(!own)).catch(() => {});
+  }, []);
 
   const toast = useCallback((msg) => {
     setToastMsg(msg);
@@ -69,16 +76,17 @@ export function AppProvider({ children }) {
 
   // Ghi dữ liệu, báo lỗi dễ hiểu nếu không lưu được. Trả về true khi thành công.
   const write = useCallback(async (fn, okMsg) => {
+    if (readOnly) { toast("Bạn chỉ có quyền xem sổ này"); return false; }
     if (!db.current) { toast("Chưa kết nối được nơi lưu dữ liệu"); return false; }
     try { await fn(db.current); if (okMsg) toast(okMsg); return true; }
     catch (e) { toast(e?.code === "quota_exceeded" ? "Sổ đã đầy, hãy xóa bớt dữ liệu cũ" : "Chưa lưu được, thử lại sau ít giây"); return false; }
-  }, [toast]);
+  }, [toast, readOnly]);
 
   const go = useCallback((view, p = {}) => { setNav({ view, p }); window.scrollTo(0, 0); }, []);
   const setP = useCallback((patch) => setNav((n) => ({ ...n, p: { ...n.p, ...patch } })), []);
 
   return (
-    <Ctx.Provider value={{ data, status, write, toast, go, setP, assets, view: nav.view, p: nav.p }}>
+    <Ctx.Provider value={{ data, status, write, toast, go, setP, assets: readOnly ? null : assets, readOnly, view: nav.view, p: nav.p }}>
       {children}
       {toastMsg && <div className="toast" role="status">{toastMsg}</div>}
     </Ctx.Provider>

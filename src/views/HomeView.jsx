@@ -4,7 +4,7 @@ import { fmt, initials } from "../lib/format.js";
 import { balances } from "../lib/ledger.js";
 
 export default function HomeView() {
-  const { data, go } = useApp();
+  const { data, go, readOnly } = useApp();
   const b = balances(data);
   const owe = Object.values(b).filter((v) => v > 0).reduce((a, v) => a + v, 0);
   const cred = Object.values(b).filter((v) => v < 0).reduce((a, v) => a - v, 0);
@@ -19,7 +19,7 @@ export default function HomeView() {
     </div>
     {!data.members.length ? (
       <Empty title="Chưa có ai trong sổ">Thêm những người hay ăn uống chung, rồi bắt đầu ghi khoản chi đầu tiên.
-        <div style={{ marginTop: 14 }}><button className="btn primary" onClick={() => go("members")}>Thêm thành viên</button></div></Empty>
+        {!readOnly && <div style={{ marginTop: 14 }}><button className="btn primary" onClick={() => go("members")}>Thêm thành viên</button></div>}</Empty>
     ) : <>
       <div className="section-h"><span>Từng người</span><span>Số dư</span></div>
       <div className="list">

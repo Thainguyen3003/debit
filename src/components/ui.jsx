@@ -32,7 +32,8 @@ export function BalPill({ v }) {
 }
 
 export function Fab() {
-  const { go, view, p } = useApp();
+  const { go, view, p, readOnly } = useApp();
+  if (readOnly) return null;
   return <button className="fab" onClick={() => go("expense", { from: view, mid: p.mid, pm: p.pm })}>+ Thêm khoản chi</button>;
 }
 

@@ -5,7 +5,7 @@ import { fmt, fmtNum, parseMoney, today, dmy, monthLabel } from "../lib/format.j
 import { CLOSED_MSG, timeline, isClosed } from "../lib/ledger.js";
 
 export default function PersonView() {
-  const { data, write, toast, go, setP, p } = useApp();
+  const { data, write, toast, go, setP, p, readOnly } = useApp();
   const mid = p.mid, pm = p.pm || "";
   const m = data.members.find((x) => x.id === mid);
   const { ev, lastZero, balance } = timeline(data, mid);
@@ -55,9 +55,9 @@ export default function PersonView() {
     </div>
     <div className="btns" style={{ marginBottom: 12 }}>
       <button className="btn primary" onClick={() => go("invoice", { mid, pm })}>{pm ? "Hóa đơn " + monthLabel(pm).toLowerCase() : "Xem hóa đơn"}</button>
-      <ConfirmButton className="btn" label="Tất toán" confirmLabel={"Tất toán " + fmt(Math.abs(balance))} disabled={Math.abs(balance) < 1} onConfirm={settle} />
+      {!readOnly && <ConfirmButton className="btn" label="Tất toán" confirmLabel={"Tất toán " + fmt(Math.abs(balance))} disabled={Math.abs(balance) < 1} onConfirm={settle} />}
     </div>
-    <div className="card">
+    {!readOnly && <div className="card">
       <div className="flabel" style={{ marginBottom: 8 }}>Ghi nhận trả tiền</div>
       <div className="seg" style={{ marginBottom: 10 }}>
         <button className={dir === "in" ? "on" : ""} onClick={() => setDir("in")}>{m.name} trả bạn</button>
@@ -69,7 +69,7 @@ export default function PersonView() {
         <button className="btn primary" onClick={savePay}>Lưu</button>
       </div>
       <div className="hint" style={{ marginTop: 6 }}>Gõ được 200k, 1.5tr hoặc 200000.</div>
-    </div>
+    </div>}
 
     <div className="months" style={{ marginTop: 16 }}>
       <button className={"chip" + (pm ? "" : " on")} onClick={() => setP({ pm: "" })}>Tất cả</button>
@@ -80,7 +80,7 @@ export default function PersonView() {
     {!rows.length ? <Empty title="">Chưa có khoản nào liên quan đến {m.name}{pm ? " trong tháng này" : ""}.</Empty> : (
       <div className="list">
         {rows.map(({ x, i }) => {
-          const openExp = x.kind === "exp" ? () => (isClosed(data, x.date.slice(0, 7)) ? toast(CLOSED_MSG) : go("expense", { id: x.id, from: "person", mid, pm })) : undefined;
+          const openExp = x.kind === "exp" && !readOnly ? () => (isClosed(data, x.date.slice(0, 7)) ? toast(CLOSED_MSG) : go("expense", { id: x.id, from: "person", mid, pm })) : undefined;
           return (
             <Fragment key={x.kind + x.id}>
               {i === lastZero && i < ev.length - 1 && <div className="divider">Đã tất toán đến đây</div>}
@@ -90,7 +90,7 @@ export default function PersonView() {
                 <span className="r num">
                   <span className={x.delta > 0 ? "c-owe" : "c-credit"}>{x.delta > 0 ? "+" + fmt(x.delta) : "−" + fmt(-x.delta)}</span><br />
                   <span className="run">{fmt(x.run)}</span>
-                  {x.kind === "pay" && <><br /><ConfirmButton label="Xóa" confirmLabel="Xác nhận xóa" style={{ padding: "2px 8px", fontSize: 12, marginTop: 4 }} onConfirm={() => delPay(x)} /></>}
+                  {x.kind === "pay" && !readOnly && <><br /><ConfirmButton label="Xóa" confirmLabel="Xác nhận xóa" style={{ padding: "2px 8px", fontSize: 12, marginTop: 4 }} onConfirm={() => delPay(x)} /></>}
                 </span>
               </div>
             </Fragment>

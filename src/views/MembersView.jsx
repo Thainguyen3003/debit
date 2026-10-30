@@ -8,7 +8,7 @@ import { BANKS } from "../lib/vietqr.js";
 const small = { padding: "6px 10px", fontSize: 13 };
 
 function MemberRow({ m, v, used }) {
-  const { write, toast } = useApp();
+  const { write, toast, readOnly } = useApp();
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(m.name);
   async function rename() {
@@ -28,11 +28,11 @@ function MemberRow({ m, v, used }) {
       <span className="avatar">{initials(m.name)}</span>
       <span className="main"><span className="name">{m.name}</span><br />
         <span className={"sub num " + balClass(v)}>{Math.abs(v) < 1 ? "Không nợ" : (v > 0 ? "Nợ bạn " : "Bạn nợ ") + fmt(Math.abs(v))}</span></span>
-      <span className="btns" style={{ flex: "none" }}>
+      {!readOnly && <span className="btns" style={{ flex: "none" }}>
         <button className="btn" style={small} onClick={() => setEditing(true)}>Sửa</button>
         <button className="btn" style={small} onClick={() => write((db) => db.doc("members/" + m.id).update({ hidden: !m.hidden }), m.hidden ? "Đã hiện lại" : "Đã ẩn")}>{m.hidden ? "Hiện" : "Ẩn"}</button>
         {!used && <ConfirmButton label="Xóa" confirmLabel="Xác nhận xóa" style={small} onConfirm={() => write((db) => db.doc("members/" + m.id).delete(), "Đã xóa")} />}
-      </span>
+      </span>}
     </div>
   );
 }
@@ -78,7 +78,7 @@ function QrUpload() {
 }
 
 export default function MembersView() {
-  const { data, write, toast } = useApp();
+  const { data, write, toast, readOnly } = useApp();
   const b = balances(data);
   const st = data.settings;
   const [newName, setNewName] = useState("");
@@ -113,10 +113,10 @@ export default function MembersView() {
 
   return <>
     <TopBar title="Thành viên" />
-    <div className="card"><div style={{ display: "flex", gap: 8 }}>
+    {!readOnly && <div className="card"><div style={{ display: "flex", gap: 8 }}>
       <input className="input" id="new-member" placeholder="Tên người mới" value={newName} onChange={(e) => setNewName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && add()} />
       <button className="btn primary" onClick={add}>Thêm</button>
-    </div></div>
+    </div></div>}
 
     <div className="section-h"><span>Đang dùng ({vis.length})</span></div>
     {vis.length ? <div className="list">{vis.map((m) => <MemberRow key={m.id} m={m} v={b[m.id] || 0} used={used(m.id)} />)}</div>
@@ -127,6 +127,7 @@ export default function MembersView() {
       <p className="hint">Người đã ẩn không hiện khi chọn người tham gia, nhưng vẫn giữ lịch sử.</p>
     </>}
 
+    {!readOnly && <>
     <div className="section-h"><span>Ngân hàng của bạn (cho mã QR)</span></div>
     <div className="card">
       <div className="field"><label htmlFor="s-name">Tên của bạn trên hóa đơn</label>
@@ -152,5 +153,6 @@ export default function MembersView() {
       <button className="btn block" onClick={exportData}>Xuất dữ liệu (.json)</button>
       <p className="hint" style={{ marginTop: 8 }}>Lưu một bản sao toàn bộ sổ nợ ra file, dùng để sao lưu hoặc chuyển sang nơi khác sau này.</p>
     </div>
+    </>}
   </>;
 }

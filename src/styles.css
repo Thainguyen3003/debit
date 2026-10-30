@@ -26,6 +26,7 @@ body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-siz
   padding-block:0 calc(140px + env(safe-area-inset-bottom,0px))} /* chừa chỗ cho thanh tab và nút nổi Thêm khoản chi */
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
 .wrap{max-width:560px;margin:0 auto}
+.ro-note{margin-top:12px;padding:10px 12px;border-radius:var(--r);background:var(--credit-soft);color:var(--ink);font-size:13px}
 .num{font-variant-numeric:tabular-nums}
 button,input,select{font:inherit;color:inherit}
 button{cursor:pointer}

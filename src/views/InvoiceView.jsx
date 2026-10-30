@@ -7,7 +7,7 @@ import { ME, nameOf, invoiceData } from "../lib/ledger.js";
 import { vietqr, bankName } from "../lib/vietqr.js";
 
 export default function InvoiceView() {
-  const { data, toast, go, p } = useApp();
+  const { data, toast, go, p, readOnly } = useApp();
   const m = data.members.find((x) => x.id === p.mid);
   const { items, balance, label } = invoiceData(data, p.mid, p.pm);
   const st = data.settings;
@@ -69,7 +69,7 @@ export default function InvoiceView() {
       )}
     </div>
     <div className="btns" style={{ marginTop: 12 }}><button className="btn" onClick={copy}>Sao chép nội dung</button></div>
-    {balance >= 1 && !hasBank && !st.qrAssetId
+    {balance >= 1 && !hasBank && !st.qrAssetId && !readOnly
       ? <p className="hint" style={{ marginTop: 10 }}>Muốn có mã QR chuyển khoản? Tải ảnh QR hoặc nhập tài khoản ngân hàng ở{" "}
           <button className="btn" style={{ padding: "2px 8px", fontSize: 12 }} onClick={() => go("members")}>Thành viên → Ngân hàng</button></p>
       : <p className="hint" style={{ marginTop: 10 }}>Chụp màn hình phần hóa đơn để gửi cho {m.name}.</p>}

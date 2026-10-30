@@ -16,12 +16,12 @@ function DayCells({ date, show }) {
 }
 
 export default function SheetView() {
-  const { data, write, toast, go } = useApp();
+  const { data, write, toast, go, readOnly } = useApp();
   const ms = sheetMonths(data);
   const [picked, setPicked] = useState(rememberedMonth);
   const ym = ms.includes(picked) ? picked : ms[ms.length - 1];
   const setMonth = (m) => { rememberedMonth = m; setPicked(m); };
-  const start = ym + "-01", inM = (d) => (d || "").startsWith(ym), locked = isClosed(data, ym), idx = ms.indexOf(ym);
+  const start = ym + "-01", inM = (d) => (d || "").startsWith(ym), closed = isClosed(data, ym), locked = closed || readOnly, idx = ms.indexOf(ym);
 
   const [edit, setEdit] = useState(null); // ô đang sửa: {eid, key, value}
   const editRef = useRef(null);
@@ -66,7 +66,7 @@ export default function SheetView() {
 
   // ---- sửa trực tiếp một ô ----
   function startCell(x, key) {
-    if (locked) return toast(CLOSED_MSG);
+    if (locked) return readOnly || toast(CLOSED_MSG);
     const e = { eid: x.id, key, value: key === "title" ? x.title : fmtNum(x.shares?.[key]) };
     editRef.current = e; setEdit(e);
   }
@@ -142,7 +142,7 @@ export default function SheetView() {
         <button key={m} className={"chip" + (m === ym ? " on" : "")} onClick={() => setMonth(m)}>{monthLabel(m)}{isClosed(data, m) ? " · đã chốt" : ""}</button>
       ))}</div>
       <button className="back" aria-label="Tháng sau" disabled={idx >= ms.length - 1} onClick={() => setMonth(ms[idx + 1])}>›</button>
-      <button className="chip" onClick={newMonth}>+ Tháng mới</button>
+      {!readOnly && <button className="chip" onClick={newMonth}>+ Tháng mới</button>}
     </div>
 
     <div className="msum">
@@ -152,15 +152,15 @@ export default function SheetView() {
       <div><span className="lbl">Bạn nợ người khác</span><b className="num c-credit">{fmt(credEnd)}</b></div>
       <div><span className="lbl">Đã tất toán</span><b className="num">{settled}/{active.length} người</b></div>
     </div>
-    <div className="mstatus">
-      {locked ? <>
+    {!readOnly && <div className="mstatus">
+      {closed ? <>
         <span className="pill zero">Đã chốt sổ {monthLabel(ym).toLowerCase()}</span>
         <ConfirmButton className="btn" label="Mở khóa" confirmLabel="Mở khóa để sửa" onConfirm={() => setClosed(false)} />
       </> : <>
         <span className="hint">Xong tháng thì chốt sổ để khóa lại, tránh sửa nhầm. Số còn nợ vẫn chuyển sang Nợ cũ của tháng sau.</span>
         <ConfirmButton className="btn" label="Chốt sổ tháng này" confirmLabel={"Chốt sổ " + monthLabel(ym).toLowerCase()} onConfirm={() => setClosed(true)} />
       </>}
-    </div>
+    </div>}
 
     <div className={"sheet" + (locked ? " locked" : "")}>
       <table>
@@ -187,7 +187,7 @@ export default function SheetView() {
               </tr>
             );
             return (
-              <tr key={x.id} className="click" onClick={() => (locked ? toast(CLOSED_MSG) : go("expense", { id: x.id, from: "sheet" }))}>
+              <tr key={x.id} className="click" onClick={() => (readOnly ? undefined : locked ? toast(CLOSED_MSG) : go("expense", { id: x.id, from: "sheet" }))}>
                 <DayCells date={x.date} show={show} />
                 {isEditing(x.id, "title")
                   ? <td className="t editing" onClick={(e) => e.stopPropagation()}>{cellInput(false)}</td>
@@ -224,7 +224,7 @@ export default function SheetView() {
         </tbody>
       </table>
     </div>
-    {locked
+    {readOnly ? <p className="hint" style={{ marginTop: 8 }}>Gạch ngang là đã trả.</p> : closed
       ? <p className="hint" style={{ marginTop: 8 }}>Tháng đã chốt sổ nên không sửa được. Bấm Mở khóa ở trên nếu cần sửa.</p>
       : <>
         <div className="btns" style={{ marginTop: 10 }}><button className="btn primary" style={{ flex: "none" }} onClick={saveDraft}>Lưu dòng mới</button></div>
